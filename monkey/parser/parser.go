@@ -8,11 +8,20 @@ import (
 )
 
 type Parser struct {
-	lexer     *lexer.Lexer
-	errors    []string
+	lexer  *lexer.Lexer
+	errors []string
+
 	curToken  token.Token
 	peekToken token.Token
+
+	prefixParseFns map[token.TokenType]prefixParseFn
+	infixParseFns  map[token.TokenType]infixParseFn
 }
+
+type (
+	prefixParseFn func() ast.Expression
+	infixParseFn  func(expression ast.Expression) ast.Expression
+)
 
 func New(lexer *lexer.Lexer) *Parser {
 	parser := &Parser{lexer: lexer, errors: []string{}}
@@ -20,6 +29,10 @@ func New(lexer *lexer.Lexer) *Parser {
 	// Set curToken and peekToken
 	parser.nextToken()
 	parser.nextToken()
+
+	parser.prefixParseFns = make(map[token.TokenType]prefixParseFn)
+	parser.registerPrefixFn(token.IDENT, parser.parseIdentifier)
+
 	return parser
 }
 
@@ -50,7 +63,7 @@ func (parser *Parser) parseStatement() ast.Statement {
 	case token.RETURN:
 		return parser.parseReturnStatement()
 	default:
-		return nil
+		return parser.parseExpressionStatement()
 	}
 }
 
@@ -112,4 +125,49 @@ func (parser *Parser) parseReturnStatement() *ast.ReturnStatement {
 	}
 
 	return statement
+}
+
+func (parser *Parser) registerPrefixFn(tokenType token.TokenType, fn prefixParseFn) {
+	parser.prefixParseFns[tokenType] = fn
+}
+
+func (parser *Parser) registerInfixFn(tokenType token.TokenType, fn infixParseFn) {
+	parser.infixParseFns[tokenType] = fn
+}
+
+func (parser *Parser) parseExpressionStatement() *ast.ExpressionStatement {
+	statement := &ast.ExpressionStatement{Token: parser.curToken}
+
+	statement.Expression = parser.parseExpression(LOWEST)
+	if parser.peekTokenIs(token.SEMICOLON) {
+		parser.nextToken()
+	}
+
+	return statement
+}
+
+const (
+	_ int = iota
+	LOWEST
+	EQUALS      // ==
+	LESSGREATER // < or >
+	SUM         // +
+	PRODUCT     // *
+	PREFIX      // -n or !n
+	CALL        // function(x)
+)
+
+func (parser *Parser) parseExpression(precedence int) ast.Expression {
+	prefixFn := parser.prefixParseFns[parser.curToken.Type]
+	if prefixFn == nil {
+		return nil
+	}
+
+	leftExp := prefixFn()
+
+	return leftExp
+}
+
+func (parser *Parser) parseIdentifier() ast.Expression {
+	return &ast.Identifier{Token: parser.curToken, Value: parser.curToken.Literal}
 }

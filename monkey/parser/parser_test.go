@@ -3,6 +3,7 @@ package parser
 import (
 	"monkey/ast"
 	"monkey/lexer"
+	"monkey/token"
 	"testing"
 )
 
@@ -67,7 +68,7 @@ func testLetStatement(t *testing.T, s ast.Statement, name string) bool {
 	}
 
 	if letStmt.Name.Value != name {
-		t.Errorf("letStmt.Name.Value not '%s'. got=%s", name, letStmt.Name.Value)
+		t.Errorf("letStmt.Name.ReturnValue not '%s'. got=%s", name, letStmt.Name.Value)
 		return false
 	}
 
@@ -107,5 +108,58 @@ return 993322;
 			t.Errorf("returnStmt.TokenLiteral not 'return', got %q",
 				returnStmt.TokenLiteral())
 		}
+	}
+}
+
+func TestString(t *testing.T) {
+	program := &ast.Program{
+		Statements: []ast.Statement{
+			&ast.LetStatement{
+				Token: token.Token{Type: token.LET, Literal: "let"},
+				Name: &ast.Identifier{
+					Token: token.Token{Type: token.IDENT, Literal: "myVar"},
+					Value: "myVar",
+				},
+				Value: &ast.Identifier{
+					Token: token.Token{Type: token.IDENT, Literal: "anotherVar"},
+					Value: "anotherVar",
+				},
+			},
+		},
+	}
+
+	if program.String() != "let myVar = anotherVar;" {
+		t.Errorf("program.String() wrong. got=%q", program.String())
+	}
+}
+
+func TestIdentifierExpression(t *testing.T) {
+	input := "foobar;"
+
+	lexer := lexer.New(input)
+	parser := New(lexer)
+	program := parser.ParseProgram()
+	checkParserErrors(t, parser)
+
+	if len(program.Statements) != 1 {
+		t.Fatalf("program has not enough statements. got=%d",
+			len(program.Statements))
+	}
+	statement, ok := program.Statements[0].(*ast.ExpressionStatement)
+	if !ok {
+		t.Fatalf("program.Statements[0] is not ast.ExpressionStatement. got=%T",
+			program.Statements[0])
+	}
+
+	identifier, ok := statement.Expression.(*ast.Identifier)
+	if !ok {
+		t.Fatalf("exp not *ast.Identifier. got=%T", statement.Expression)
+	}
+	if identifier.Value != "foobar" {
+		t.Errorf("identifier.Value not %s. got=%s", "foobar", identifier.Value)
+	}
+	if identifier.TokenLiteral() != "foobar" {
+		t.Errorf("identifier.TokenLiteral not %s. got=%s", "foobar",
+			identifier.TokenLiteral())
 	}
 }

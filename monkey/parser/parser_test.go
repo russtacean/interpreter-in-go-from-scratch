@@ -197,6 +197,69 @@ func TestIntegerLiteralExpression(t *testing.T) {
 	testIntegerLiteral(t, stmt.Expression, 5)
 }
 
+func testIntegerLiteral(t *testing.T, il ast.Expression, value int64) bool {
+	integer, ok := il.(*ast.IntegerLiteral)
+	if !ok {
+		t.Errorf("il not *ast.IntegerLiteral. got=%T", il)
+		return false
+	}
+
+	if integer.Value != value {
+		t.Errorf("integer.Value not %d. got=%d", value, integer.Value)
+		return false
+	}
+
+	if integer.TokenLiteral() != fmt.Sprintf("%d", value) {
+		t.Errorf("integer.TokenLiteral not %d. got=%s", value,
+			integer.TokenLiteral())
+		return false
+	}
+
+	return true
+}
+
+func TestBooleanLiteralExpression(t *testing.T) {
+	input := "false;"
+
+	lex := lexer.New(input)
+	parser := New(lex)
+	program := parser.ParseProgram()
+	checkParserErrors(t, parser)
+
+	if len(program.Statements) != 1 {
+		t.Fatalf("program has not enough statements. got=%d",
+			len(program.Statements))
+	}
+	stmt, ok := program.Statements[0].(*ast.ExpressionStatement)
+	if !ok {
+		t.Fatalf("program.Statements[0] is not ast.ExpressionStatement. got=%T",
+			program.Statements[0])
+	}
+
+	testBooleanLiteral(t, stmt.Expression, false)
+}
+
+func testBooleanLiteral(t *testing.T, il ast.Expression, value bool) bool {
+	bool, ok := il.(*ast.BooleanLiteral)
+	if !ok {
+		t.Errorf("il not *ast.BooleanLiteral. got=%T", il)
+		return false
+	}
+
+	if bool.Value != value {
+		t.Errorf("bool.Value not %t. got=%t", value, bool.Value)
+		return false
+	}
+
+	if bool.TokenLiteral() != fmt.Sprintf("%t", value) {
+		t.Errorf("bool.TokenLiteral not %t. got=%s", value,
+			bool.TokenLiteral())
+		return false
+	}
+
+	return true
+}
+
 func TestParsingPrefixExpressions(t *testing.T) {
 	prefixTests := []struct {
 		input        string
@@ -236,27 +299,6 @@ func TestParsingPrefixExpressions(t *testing.T) {
 			return
 		}
 	}
-}
-
-func testIntegerLiteral(t *testing.T, il ast.Expression, value int64) bool {
-	integ, ok := il.(*ast.IntegerLiteral)
-	if !ok {
-		t.Errorf("il not *ast.IntegerLiteral. got=%T", il)
-		return false
-	}
-
-	if integ.Value != value {
-		t.Errorf("integ.Value not %d. got=%d", value, integ.Value)
-		return false
-	}
-
-	if integ.TokenLiteral() != fmt.Sprintf("%d", value) {
-		t.Errorf("integ.TokenLiteral not %d. got=%s", value,
-			integ.TokenLiteral())
-		return false
-	}
-
-	return true
 }
 
 func TestParsingInfixExpressions(t *testing.T) {

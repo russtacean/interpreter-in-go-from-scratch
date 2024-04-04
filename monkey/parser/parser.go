@@ -30,6 +30,13 @@ var precedenceMap = map[token.TokenType]int{
 	token.SLASH:    PRODUCT,
 }
 
+func getPrecedence(tokenType token.TokenType) int {
+	if precedence, ok := precedenceMap[tokenType]; ok {
+		return precedence
+	}
+	return LOWEST
+}
+
 type Parser struct {
 	lexer  *lexer.Lexer
 	errors []string
@@ -60,6 +67,7 @@ func New(lexer *lexer.Lexer) *Parser {
 	parser.registerPrefixFn(token.MINUS, parser.parsePrefixExpression)
 	parser.registerPrefixFn(token.TRUE, parser.parseBooleanLiteral)
 	parser.registerPrefixFn(token.FALSE, parser.parseBooleanLiteral)
+	parser.registerPrefixFn(token.LPAREN, parser.parseGroupedExpression)
 
 	parser.infixParseFns = make(map[token.TokenType]infixParseFn)
 	parser.registerInfixFn(token.EQ, parser.parseInfixExpression)
@@ -261,17 +269,21 @@ func (parser *Parser) parseInfixExpression(left ast.Expression) ast.Expression {
 
 }
 
-func getPrecedence(tokenType token.TokenType) int {
-	if precedence, ok := precedenceMap[tokenType]; ok {
-		return precedence
-	}
-	return LOWEST
-}
-
 func (parser *Parser) peekPrecendence() int {
 	return getPrecedence(parser.peekToken.Type)
 }
 
 func (parser *Parser) curPrecedence() int {
 	return getPrecedence(parser.curToken.Type)
+}
+
+func (parser *Parser) parseGroupedExpression() ast.Expression {
+	parser.nextToken()
+
+	expression := parser.parseExpression(LOWEST)
+	if !parser.expectPeek(token.RPAREN) {
+		return nil
+	}
+
+	return expression
 }

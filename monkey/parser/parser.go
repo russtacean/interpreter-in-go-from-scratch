@@ -69,6 +69,7 @@ func New(lexer *lexer.Lexer) *Parser {
 	parser.registerPrefixFn(token.FALSE, parser.parseBooleanLiteral)
 	parser.registerPrefixFn(token.LPAREN, parser.parseGroupedExpression)
 	parser.registerPrefixFn(token.IF, parser.parseIfExpression)
+	parser.registerPrefixFn(token.FUNCTION, parser.parseFunctionLiteral)
 
 	parser.infixParseFns = make(map[token.TokenType]infixParseFn)
 	parser.registerInfixFn(token.EQ, parser.parseInfixExpression)
@@ -331,4 +332,49 @@ func (parser *Parser) parseBlockStatement() *ast.BlockStatement {
 	}
 
 	return block
+}
+
+func (parser *Parser) parseFunctionLiteral() ast.Expression {
+	literal := &ast.FunctionLiteral{Token: parser.curToken}
+
+	if !parser.expectPeek(token.LPAREN) {
+		return nil
+	}
+
+	literal.Parameters = parser.parseFunctionParameters()
+
+	if !parser.expectPeek(token.LBRACE) {
+		return nil
+	}
+
+	literal.Body = parser.parseBlockStatement()
+
+	return literal
+}
+
+func (parser *Parser) parseFunctionParameters() []*ast.Identifier {
+	var parameters []*ast.Identifier
+
+	if parser.peekTokenIs(token.RPAREN) {
+		parser.nextToken()
+		return parameters
+	}
+
+	parser.nextToken()
+	identifier := &ast.Identifier{Token: parser.curToken, Value: parser.curToken.Literal}
+	parameters = append(parameters, identifier)
+
+	for parser.peekTokenIs(token.COMMA) {
+		parser.nextToken()
+		parser.nextToken()
+		identifier := &ast.Identifier{Token: parser.curToken, Value: parser.curToken.Literal}
+		parameters = append(parameters, identifier)
+	}
+
+	if !parser.expectPeek(token.RPAREN) {
+		fmt.Println(parameters)
+		return nil
+	}
+
+	return parameters
 }

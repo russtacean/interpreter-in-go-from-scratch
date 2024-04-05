@@ -148,6 +148,9 @@ func isTruthy(obj object.Object) bool {
 	case TRUE:
 		return true
 	default:
+		if obj.Type() == object.INTEGER_OBJ {
+			return obj.(*object.Integer).Value > 0
+		}
 		return true
 	}
 }

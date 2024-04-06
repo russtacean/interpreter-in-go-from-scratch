@@ -173,3 +173,16 @@ func TestNextTokenString(t *testing.T) {
 
 	verifyNextToken(t, input, tests)
 }
+
+// Chap 4.4
+func TestNextTokenBrackets(t *testing.T) {
+	input := "[1, 2]"
+	tests := []NextTokenTest{
+		{token.LBRACKET, "["},
+		{token.INT, "1"},
+		{token.COMMA, ","},
+		{token.INT, "2"},
+		{token.RBRACKET, "]"},
+	}
+	verifyNextToken(t, input, tests)
+}

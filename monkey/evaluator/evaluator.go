@@ -209,7 +209,6 @@ func evalIntegerInfixExpression(operator string, left, right object.Object) obje
 func evalStringInfixExpression(operator string, left, right object.Object) object.Object {
 	leftVal := left.(*object.String).Value
 	rightVal := right.(*object.String).Value
-	fmt.Println(leftVal, rightVal)
 
 	switch operator {
 	case "+":
@@ -239,17 +238,19 @@ func evalIfExpression(ie *ast.IfExpression, env *object.Environment) object.Obje
 }
 
 func isTruthy(obj object.Object) bool {
-	switch obj {
-	case NULL:
+	switch {
+	case obj == NULL:
 		return false
-	case FALSE:
+	case obj == FALSE:
 		return false
-	case TRUE:
+	case obj == TRUE:
 		return true
+	case obj.Type() == object.INTEGER_OBJ:
+		return obj.(*object.Integer).Value > 0
+	case obj.Type() == object.STRING_OBJ:
+		return obj.(*object.String).Value != ""
+
 	default:
-		if obj.Type() == object.INTEGER_OBJ {
-			return obj.(*object.Integer).Value > 0
-		}
 		return true
 	}
 }

@@ -159,3 +159,17 @@ func TestNextTokenOperatorsMoreKeywords(t *testing.T) {
 
 	verifyNextToken(t, input, tests)
 }
+
+// Chap 4.1
+func TestNextTokenString(t *testing.T) {
+	input := `
+"foobar"
+"foo bar"
+`
+	tests := []NextTokenTest{
+		{token.STRING, "foobar"},
+		{token.STRING, "foo bar"},
+	}
+
+	verifyNextToken(t, input, tests)
+}

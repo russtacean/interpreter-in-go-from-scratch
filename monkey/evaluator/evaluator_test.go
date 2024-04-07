@@ -372,6 +372,11 @@ func TestBuiltinFunctions(t *testing.T) {
 		{`len([1, 2, 3])`, 3},
 		{`len(1)`, "argument to `len` not supported, got INTEGER"},
 		{`len("one", "two")`, "wrong number of arguments to `len`. got=2, want=1"},
+		{`first([1, 2, 3])`, 1},
+		{`first(true)`, "argument to `first` not supported, got BOOLEAN"},
+		{`last([1, 2, 3])`, 3},
+		{`last(true)`, "argument to `last` not supported, got BOOLEAN"},
+		{`rest(true)`, "argument to `rest` not supported, got BOOLEAN"},
 	}
 
 	for _, tt := range tests {

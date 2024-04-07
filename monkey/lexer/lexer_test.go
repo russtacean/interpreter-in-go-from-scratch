@@ -186,3 +186,21 @@ func TestNextTokenBrackets(t *testing.T) {
 	}
 	verifyNextToken(t, input, tests)
 }
+
+// Chap 4.5
+func TestNextTokenColonForHash(t *testing.T) {
+	input := "{1: 2, 3: 4}"
+	tests := []NextTokenTest{
+		{token.LBRACE, "{"},
+		{token.INT, "1"},
+		{token.COLON, ":"},
+		{token.INT, "2"},
+		{token.COMMA, ","},
+		{token.INT, "3"},
+		{token.COLON, ":"},
+		{token.INT, "4"},
+		{token.RBRACE, "}"},
+	}
+	verifyNextToken(t, input, tests)
+
+}

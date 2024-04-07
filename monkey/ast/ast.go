@@ -99,7 +99,22 @@ func (es *ExpressionStatement) String() string {
 	return ""
 }
 
-// Expressions
+type BlockStatement struct {
+	Token      token.Token
+	Statements []Statement
+}
+
+func (bs *BlockStatement) StatementNode()       {}
+func (bs *BlockStatement) TokenLiteral() string { return bs.Token.Literal }
+func (bs *BlockStatement) String() string {
+	var out bytes.Buffer
+	for _, stmt := range bs.Statements {
+		out.WriteString(stmt.String())
+	}
+	return out.String()
+}
+
+// Expressions: literals
 type Identifier struct {
 	Token token.Token
 	Value string
@@ -183,7 +198,29 @@ func (al *ArrayLiteral) String() string {
 	return out.String()
 }
 
-// Expressions
+type HashLiteral struct {
+	Token token.Token
+	Pairs map[Expression]Expression
+}
+
+func (hl *HashLiteral) ExpressionNode()      {}
+func (hl *HashLiteral) TokenLiteral() string { return hl.Token.Literal }
+func (hl *HashLiteral) String() string {
+	var out bytes.Buffer
+
+	pairs := []string{}
+	for key, val := range hl.Pairs {
+		pairs = append(pairs, key.String()+":"+val.String())
+	}
+
+	out.WriteString("{")
+	out.WriteString(strings.Join(pairs, ", "))
+	out.WriteString("}")
+
+	return out.String()
+}
+
+// Expressions: operations
 type PrefixExpression struct {
 	Token    token.Token // ! or -
 	Operator string
@@ -244,21 +281,6 @@ func (ie *IfExpression) String() string {
 	if ie.Alternative != nil {
 		out.WriteString("else")
 		out.WriteString(ie.Alternative.String())
-	}
-	return out.String()
-}
-
-type BlockStatement struct {
-	Token      token.Token
-	Statements []Statement
-}
-
-func (bs *BlockStatement) StatementNode()       {}
-func (bs *BlockStatement) TokenLiteral() string { return bs.Token.Literal }
-func (bs *BlockStatement) String() string {
-	var out bytes.Buffer
-	for _, stmt := range bs.Statements {
-		out.WriteString(stmt.String())
 	}
 	return out.String()
 }

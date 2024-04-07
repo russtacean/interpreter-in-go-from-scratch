@@ -40,6 +40,7 @@ type Hashable interface {
 
 type Integer struct {
 	Value int64
+	Hash  HashKey
 }
 
 func (i *Integer) Type() ObjectType { return INTEGER_OBJ }
@@ -68,12 +69,21 @@ type String struct {
 	Value string
 }
 
+var strHashKeyMemo = make(map[string]HashKey)
+
 func (s *String) Type() ObjectType { return STRING_OBJ }
 func (s *String) Inspect() string  { return fmt.Sprintf("%s", s.Value) }
 func (s *String) HashKey() HashKey {
+	if hashKey, ok := strHashKeyMemo[s.Value]; ok {
+		return hashKey
+	}
+
 	h := fnv.New64a()
 	h.Write([]byte(s.Value))
-	return HashKey{Type: s.Type(), Value: h.Sum64()} // Can result in hash collision, but low probability, extra credit to fix
+	hashKey := HashKey{Type: s.Type(), Value: h.Sum64()} // Can result in hash collision, but low probability, extra credit to fix
+
+	strHashKeyMemo[s.Value] = hashKey
+	return hashKey
 }
 
 type Null struct{}

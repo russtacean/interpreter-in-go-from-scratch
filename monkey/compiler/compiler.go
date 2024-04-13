@@ -134,8 +134,29 @@ func (compiler *Compiler) Compile(node ast.Node) error {
 		if compiler.isLastInstructionPop() {
 			compiler.removeLastPop()
 		}
-		afterConsequencePos := len(compiler.instructions)
-		compiler.changeOperand(jumpNotTruthyPos, afterConsequencePos)
+
+		if node.Alternative == nil {
+			afterConsequencePos := len(compiler.instructions)
+			compiler.changeOperand(jumpNotTruthyPos, afterConsequencePos)
+		} else {
+			// Emit bogus jump value to backpatch later
+			jumpPos := compiler.emit(code.OpJump, 9999)
+
+			afterConsequencePos := len(compiler.instructions)
+			compiler.changeOperand(jumpNotTruthyPos, afterConsequencePos)
+
+			err = compiler.Compile(node.Alternative)
+			if err != nil {
+				return err
+			}
+
+			if compiler.isLastInstructionPop() {
+				compiler.removeLastPop()
+			}
+
+			afterAlternativePos := len(compiler.instructions)
+			compiler.changeOperand(jumpPos, afterAlternativePos)
+		}
 
 	case *ast.IntegerLiteral:
 		integer := &object.Integer{Value: node.Value}
@@ -189,7 +210,7 @@ func (compiler *Compiler) removeLastPop() {
 
 func (compiler *Compiler) replaceInstruction(pos int, newInstruction []byte) {
 	for i := 0; i < len(newInstruction); i++ {
-		compiler.instructions[i+1] = newInstruction[i]
+		compiler.instructions[pos+i] = newInstruction[i]
 	}
 }
 

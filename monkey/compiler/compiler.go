@@ -36,6 +36,21 @@ func (compiler *Compiler) Compile(node ast.Node) error {
 		}
 		compiler.emit(code.OpPop)
 
+	case *ast.PrefixExpression:
+		err := compiler.Compile(node.Right)
+		if err != nil {
+			return err
+		}
+
+		switch node.Operator {
+		case "!":
+			compiler.emit(code.OpBang)
+		case "-":
+			compiler.emit(code.OpMinus)
+		default:
+			return fmt.Errorf("unknown operator %s", node.Operator)
+		}
+
 	case *ast.InfixExpression:
 		if node.Operator == "<" { // Special case to reduce instruction set
 			err := compiler.Compile(node.Right)
@@ -76,7 +91,6 @@ func (compiler *Compiler) Compile(node ast.Node) error {
 			compiler.emit(code.OpEqual)
 		case "!=":
 			compiler.emit(code.OpNotEqual)
-
 		default:
 			return fmt.Errorf("unknown operator %s", node.Operator)
 		}

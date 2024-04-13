@@ -63,6 +63,12 @@ func testExpectedObject(
 		if err != nil {
 			t.Errorf("testIntegerObject failed: %s", err)
 		}
+
+	case *object.Null:
+		if actual != NULL {
+			t.Errorf("object is not Null: %T (%+v)", actual, actual)
+		}
+
 	}
 
 }
@@ -147,6 +153,7 @@ func TestBooleanExpressions(t *testing.T) {
 		{"!!true", true},
 		{"!!false", false},
 		{"!!5", true},
+		{"!(if (false) { 5; })", true},
 	}
 
 	runVmTests(t, tests)
@@ -161,6 +168,9 @@ func TestConditionals(t *testing.T) {
 		{"if (1 < 2) { 10 }", 10},
 		{"if (1 < 2) { 10 } else { 20 }", 10},
 		{"if (1 > 2) { 10 } else { 20 }", 20},
+		{"if (1 > 2) { 10 }", NULL},
+		{"if (false) { 10 }", NULL},
+		{"if ((if (false) { 10 })) { 10 } else { 20 }", 20},
 	}
 
 	runVmTests(t, tests)

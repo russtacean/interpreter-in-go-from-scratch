@@ -19,6 +19,7 @@ type VM struct {
 
 var TRUE = &object.Boolean{Value: true}
 var FALSE = &object.Boolean{Value: false}
+var NULL = &object.Null{}
 
 func New(bytecode *compiler.Bytecode) *VM {
 	return &VM{
@@ -44,6 +45,12 @@ func (vm *VM) Run() error {
 		switch opcode {
 		case code.OpPop:
 			vm.pop()
+
+		case code.OpNull:
+			err := vm.push(NULL)
+			if err != nil {
+				return err
+			}
 
 		case code.OpConstant:
 			constIndex := code.ReadUint16(vm.instructions[ip+1:])
@@ -212,6 +219,8 @@ func (vm *VM) executeBangOperator() error {
 		return vm.push(FALSE)
 	case FALSE:
 		return vm.push(TRUE)
+	case NULL:
+		return vm.push(TRUE)
 	default:
 		return vm.push(FALSE)
 	}
@@ -232,6 +241,9 @@ func isTruthy(obj object.Object) bool {
 
 	case *object.Boolean:
 		return obj.Value
+
+	case *object.Null:
+		return false
 
 	default:
 		return true

@@ -5,6 +5,7 @@ import (
 	"monkey/ast"
 	"monkey/code"
 	"monkey/object"
+	"sort"
 )
 
 type Compiler struct {
@@ -186,8 +187,8 @@ func (compiler *Compiler) Compile(node ast.Node) error {
 		compiler.emit(code.OpConstant, compiler.addConstant(integer))
 
 	case *ast.StringLiteral:
-		string := &object.String{Value: node.Value}
-		compiler.emit(code.OpConstant, compiler.addConstant(string))
+		str := &object.String{Value: node.Value}
+		compiler.emit(code.OpConstant, compiler.addConstant(str))
 
 	case *ast.BooleanLiteral:
 		if node.Value {
@@ -204,6 +205,31 @@ func (compiler *Compiler) Compile(node ast.Node) error {
 			}
 		}
 		compiler.emit(code.OpArray, len(node.Elements))
+
+	case *ast.HashLiteral:
+		keys := []ast.Expression{}
+		for key := range node.Pairs {
+			keys = append(keys, key)
+		}
+		// Go doesn't guarantee ordering when iterating through map.
+		// This is not a required sort, but will keep tests from breaking randomly
+		sort.Slice(keys, func(i, j int) bool {
+			return keys[i].String() < keys[j].String()
+		})
+
+		for _, k := range keys {
+			err := compiler.Compile(k)
+			if err != nil {
+				return err
+			}
+			err = compiler.Compile(node.Pairs[k])
+			if err != nil {
+				return err
+			}
+		}
+
+		compiler.emit(code.OpHash, len(node.Pairs)*2)
+
 	}
 
 	return nil

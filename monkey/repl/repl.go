@@ -29,7 +29,14 @@ const MONKEY_FACE = `            __,__
 func Start(in io.Reader, out io.Writer) {
 	useVM := true // TODO parameterize this via command line
 	scanner := bufio.NewScanner(in)
+
+	// Tree walking interpreter
 	env := object.NewEnvironment()
+
+	// Bytecode VM
+	constants := []object.Object{}
+	globals := make([]object.Object, vm.GlobalsSize)
+	symbolTable := compiler.NewSymbolTable()
 
 	for {
 		fmt.Fprint(out, PROMPT)
@@ -49,14 +56,14 @@ func Start(in io.Reader, out io.Writer) {
 		}
 
 		if useVM {
-			comp := compiler.New()
+			comp := compiler.NewWithState(symbolTable, constants)
 			err := comp.Compile(program)
 			if err != nil {
 				fmt.Fprintf(out, "Whoops, compile error:\n %s\n", err)
 				continue
 			}
 
-			machine := vm.New(comp.Bytecode())
+			machine := vm.NewWithGlobalsStore(comp.Bytecode(), globals)
 			err = machine.Run()
 			if err != nil {
 				fmt.Fprintf(out, "Woops! Executing bytecode failed:\n %s\n", err)

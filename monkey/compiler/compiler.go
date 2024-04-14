@@ -12,6 +12,7 @@ type Compiler struct {
 	constants              []object.Object
 	lastInstruction        EmittedInstruction
 	penultimateInstruction EmittedInstruction
+	symbolTable            *SymbolTable
 }
 
 type Bytecode struct {
@@ -30,7 +31,15 @@ func New() *Compiler {
 		constants:              []object.Object{},
 		lastInstruction:        EmittedInstruction{},
 		penultimateInstruction: EmittedInstruction{},
+		symbolTable:            NewSymbolTable(),
 	}
+}
+
+func NewWithState(symbolTable *SymbolTable, constants []object.Object) *Compiler {
+	compiler := New()
+	compiler.symbolTable = symbolTable
+	compiler.constants = constants
+	return compiler
 }
 
 func (compiler *Compiler) Compile(node ast.Node) error {
@@ -42,6 +51,14 @@ func (compiler *Compiler) Compile(node ast.Node) error {
 				return err
 			}
 		}
+
+	case *ast.LetStatement:
+		err := compiler.Compile(node.Value)
+		if err != nil {
+			return err
+		}
+		symbol := compiler.symbolTable.Define(node.Name.Value)
+		compiler.emit(code.OpSetGlobal, symbol.Index)
 
 	case *ast.BlockStatement:
 		for _, s := range node.Statements {
@@ -156,6 +173,13 @@ func (compiler *Compiler) Compile(node ast.Node) error {
 
 		afterAlternativePos := len(compiler.instructions)
 		compiler.changeOperand(jumpPos, afterAlternativePos)
+
+	case *ast.Identifier:
+		symbol, ok := compiler.symbolTable.Resolve(node.Value)
+		if !ok {
+			return fmt.Errorf("undefined variable %s", node.Value)
+		}
+		compiler.emit(code.OpGetGlobal, symbol.Index)
 
 	case *ast.IntegerLiteral:
 		integer := &object.Integer{Value: node.Value}

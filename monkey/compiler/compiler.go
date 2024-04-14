@@ -195,6 +195,15 @@ func (compiler *Compiler) Compile(node ast.Node) error {
 		} else {
 			compiler.emit(code.OpFalse)
 		}
+
+	case *ast.ArrayLiteral:
+		for _, el := range node.Elements {
+			err := compiler.Compile(el)
+			if err != nil {
+				return err
+			}
+		}
+		compiler.emit(code.OpArray, len(node.Elements))
 	}
 
 	return nil

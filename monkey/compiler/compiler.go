@@ -175,6 +175,19 @@ func (compiler *Compiler) Compile(node ast.Node) error {
 		afterAlternativePos := len(compiler.instructions)
 		compiler.changeOperand(jumpPos, afterAlternativePos)
 
+	case *ast.IndexExpression:
+		err := compiler.Compile(node.Left)
+		if err != nil {
+			return err
+		}
+
+		err = compiler.Compile(node.Index)
+		if err != nil {
+			return err
+		}
+
+		compiler.emit(code.OpIndex)
+
 	case *ast.Identifier:
 		symbol, ok := compiler.symbolTable.Resolve(node.Value)
 		if !ok {

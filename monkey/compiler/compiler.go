@@ -275,6 +275,13 @@ func (compiler *Compiler) Compile(node ast.Node) error {
 		instructions := compiler.leaveScope()
 		compiledFn := &object.CompiledFunction{Instructions: instructions}
 		compiler.emit(code.OpConstant, compiler.addConstant(compiledFn))
+
+	case *ast.CallExpression:
+		err := compiler.Compile(node.Function)
+		if err != nil {
+			return err
+		}
+		compiler.emit(code.OpCall)
 	}
 
 	return nil

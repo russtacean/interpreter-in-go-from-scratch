@@ -66,7 +66,11 @@ func (compiler *Compiler) Compile(node ast.Node) error {
 			return err
 		}
 		symbol := compiler.symbolTable.Define(node.Name.Value)
-		compiler.emit(code.OpSetGlobal, symbol.Index)
+		if symbol.Scope == GlobalScope {
+			compiler.emit(code.OpSetGlobal, symbol.Index)
+		} else {
+			compiler.emit(code.OpSetLocal, symbol.Index)
+		}
 
 	case *ast.BlockStatement:
 		for _, s := range node.Statements {
@@ -208,7 +212,12 @@ func (compiler *Compiler) Compile(node ast.Node) error {
 		if !ok {
 			return fmt.Errorf("undefined variable %s", node.Value)
 		}
-		compiler.emit(code.OpGetGlobal, symbol.Index)
+
+		if symbol.Scope == GlobalScope {
+			compiler.emit(code.OpGetGlobal, symbol.Index)
+		} else {
+			compiler.emit(code.OpGetLocal, symbol.Index)
+		}
 
 	case *ast.IntegerLiteral:
 		integer := &object.Integer{Value: node.Value}
@@ -379,8 +388,10 @@ func (compiler *Compiler) enterScope() {
 		lastInstruction:        EmittedInstruction{},
 		penultimateInstruction: EmittedInstruction{},
 	}
+
 	compiler.scopes = append(compiler.scopes, scope)
 	compiler.scopeIndex++
+	compiler.symbolTable = NewEnclosedSymbolTable(compiler.symbolTable)
 }
 
 func (compiler *Compiler) leaveScope() code.Instructions {
@@ -388,6 +399,8 @@ func (compiler *Compiler) leaveScope() code.Instructions {
 
 	compiler.scopes = compiler.scopes[:len(compiler.scopes)-1]
 	compiler.scopeIndex--
+
+	compiler.symbolTable = compiler.symbolTable.Outer
 
 	return instructions
 }

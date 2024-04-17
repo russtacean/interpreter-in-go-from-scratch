@@ -207,16 +207,13 @@ func (vm *VM) Run() error {
 			}
 
 		case code.OpCall:
-			vm.currentFrame().ip += 1 // Move past number of args
+			numArgs := code.ReadUint8(instructions[ip+1:])
+			vm.currentFrame().ip += 1
 
-			fn, ok := vm.stack[vm.sp-1].(*object.CompiledFunction)
-			if !ok {
-				return fmt.Errorf("calling non-function")
+			err := vm.callFunction(int(numArgs))
+			if err != nil {
+				return err
 			}
-
-			frame := NewFrame(fn, vm.sp)
-			vm.pushFrame(frame)
-			vm.sp = frame.basePointer + fn.NumLocals // Create hole in stack to store local vars
 
 		case code.OpReturnValue:
 			returnValue := vm.pop()
@@ -475,4 +472,20 @@ func (vm *VM) pushFrame(f *Frame) {
 func (vm *VM) popFrame() *Frame {
 	vm.framesIdx--
 	return vm.frames[vm.framesIdx]
+}
+
+func (vm *VM) callFunction(numArgs int) error {
+	// Function object sits on stack beneath local vars (including args),
+	// additional -1 since sp points to next empty slot
+	fnIndex := vm.sp - 1 - int(numArgs)
+	fn, ok := vm.stack[fnIndex].(*object.CompiledFunction)
+	if !ok {
+		return fmt.Errorf("calling non-function")
+	}
+
+	frame := NewFrame(fn, vm.sp-numArgs) // Put basePointer at first arg on stack
+	vm.pushFrame(frame)
+	vm.sp = frame.basePointer + fn.NumLocals // Create hole in stack to store local vars
+
+	return nil
 }

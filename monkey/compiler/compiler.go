@@ -292,7 +292,15 @@ func (compiler *Compiler) Compile(node ast.Node) error {
 		if err != nil {
 			return err
 		}
-		compiler.emit(code.OpCall)
+
+		for _, arg := range node.Arguments {
+			err := compiler.Compile(arg)
+			if err != nil {
+				return err
+			}
+		}
+
+		compiler.emit(code.OpCall, len(node.Arguments))
 	}
 
 	return nil

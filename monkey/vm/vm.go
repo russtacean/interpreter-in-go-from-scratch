@@ -207,10 +207,13 @@ func (vm *VM) Run() error {
 			}
 
 		case code.OpCall:
+			vm.currentFrame().ip += 1 // Move past number of args
+
 			fn, ok := vm.stack[vm.sp-1].(*object.CompiledFunction)
 			if !ok {
 				return fmt.Errorf("calling non-function")
 			}
+
 			frame := NewFrame(fn, vm.sp)
 			vm.pushFrame(frame)
 			vm.sp = frame.basePointer + fn.NumLocals // Create hole in stack to store local vars

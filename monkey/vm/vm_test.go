@@ -533,3 +533,40 @@ func TestCallingFunctionsWithArgumentsAndBindings(t *testing.T) {
 
 	runVmTests(t, tests)
 }
+
+func TestCallingFunctionsWithWrongArguments(t *testing.T) {
+	tests := []vmTestCase{
+		{
+			input:    `fn() { 1; }(1);`,
+			expected: `wrong number of arguments: got=1, expected=0`,
+		},
+		{
+			input:    `fn(a) { a; }();`,
+			expected: `wrong number of arguments: got=0, expected=1`,
+		},
+		{
+			input:    `fn(a, b) { a + b; }(1);`,
+			expected: `wrong number of arguments: got=1, expected=2`,
+		},
+	}
+
+	for _, tt := range tests {
+		program := parse(tt.input)
+
+		comp := compiler.New()
+		err := comp.Compile(program)
+		if err != nil {
+			t.Fatalf("compiler error: %s", err)
+		}
+
+		vm := New(comp.Bytecode())
+		err = vm.Run()
+		if err == nil {
+			t.Fatalf("expected VM error but resulted in none.")
+		}
+
+		if err.Error() != tt.expected {
+			t.Fatalf("wrong VM error: want=%q, got=%q", tt.expected, err)
+		}
+	}
+}

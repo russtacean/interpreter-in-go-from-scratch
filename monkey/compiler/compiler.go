@@ -288,7 +288,11 @@ func (compiler *Compiler) Compile(node ast.Node) error {
 
 		numLocals := compiler.symbolTable.numDefinitions
 		instructions := compiler.leaveScope()
-		compiledFn := &object.CompiledFunction{Instructions: instructions, NumLocals: numLocals}
+		compiledFn := &object.CompiledFunction{
+			Instructions:  instructions,
+			NumLocals:     numLocals,
+			NumParameters: len(node.Parameters),
+		}
 
 		compiler.emit(code.OpConstant, compiler.addConstant(compiledFn))
 

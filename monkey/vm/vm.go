@@ -170,6 +170,17 @@ func (vm *VM) Run() error {
 				return err
 			}
 
+		case code.OpGetBuiltin:
+			builtinIdx := code.ReadUint8(instructions[ip+1:])
+			vm.currentFrame().ip += 1
+
+			definition := object.Builtins[builtinIdx]
+
+			err := vm.push(definition.Builtin)
+			if err != nil {
+				return err
+			}
+
 		case code.OpArray:
 			numElements := int(code.ReadUint16(instructions[ip+1:]))
 			vm.currentFrame().ip += 2
@@ -210,7 +221,7 @@ func (vm *VM) Run() error {
 			numArgs := code.ReadUint8(instructions[ip+1:])
 			vm.currentFrame().ip += 1
 
-			err := vm.callFunction(int(numArgs))
+			err := vm.executeCall(int(numArgs))
 			if err != nil {
 				return err
 			}
@@ -474,15 +485,22 @@ func (vm *VM) popFrame() *Frame {
 	return vm.frames[vm.framesIdx]
 }
 
-func (vm *VM) callFunction(numArgs int) error {
+func (vm *VM) executeCall(numArgs int) error {
 	// Function object sits on stack beneath local vars (including args),
 	// additional -1 since sp points to next empty slot
-	fnIndex := vm.sp - 1 - int(numArgs)
-	fn, ok := vm.stack[fnIndex].(*object.CompiledFunction)
-	if !ok {
-		return fmt.Errorf("calling non-function")
+	fnIndex := vm.sp - 1 - numArgs
+	callee := vm.stack[fnIndex]
+	switch callee := callee.(type) {
+	case *object.CompiledFunction:
+		return vm.callFunction(callee, numArgs)
+	case *object.Builtin:
+		return vm.callBuiltin(callee, numArgs)
+	default:
+		return fmt.Errorf("calling non-function and non-built-in")
 	}
+}
 
+func (vm *VM) callFunction(fn *object.CompiledFunction, numArgs int) error {
 	if numArgs != fn.NumParameters {
 		return fmt.Errorf("wrong number of arguments: got=%d, expected=%d", numArgs, fn.NumParameters)
 	}
@@ -490,6 +508,21 @@ func (vm *VM) callFunction(numArgs int) error {
 	frame := NewFrame(fn, vm.sp-numArgs) // Put basePointer at first arg on stack
 	vm.pushFrame(frame)
 	vm.sp = frame.basePointer + fn.NumLocals // Create hole in stack to store local vars
+
+	return nil
+}
+
+func (vm *VM) callBuiltin(builtin *object.Builtin, numArgs int) error {
+	args := vm.stack[vm.sp-numArgs : vm.sp]
+
+	result := builtin.Fn(args...)
+	vm.sp = vm.sp - numArgs - 1
+
+	if result != nil {
+		vm.push(result)
+	} else {
+		vm.push(NULL)
+	}
 
 	return nil
 }

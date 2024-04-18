@@ -121,7 +121,7 @@ var Builtins = []struct {
 		&Builtin{
 			Fn: func(args ...Object) Object {
 				for _, arg := range args {
-					fmt.Println(arg.Inspect())
+					fmt.Println(arg)
 				}
 
 				return nil
@@ -137,7 +137,6 @@ func newError(format string, a ...interface{}) *Error {
 func GetBuiltinByName(name string) *Builtin {
 	for _, def := range Builtins {
 		if def.Name == name {
-			fmt.Println(def.Name)
 			return def.Builtin
 		}
 	}

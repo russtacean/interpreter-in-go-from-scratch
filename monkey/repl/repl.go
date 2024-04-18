@@ -36,7 +36,11 @@ func Start(in io.Reader, out io.Writer) {
 	// Bytecode VM
 	constants := []object.Object{}
 	globals := make([]object.Object, vm.GlobalsSize)
+
 	symbolTable := compiler.NewSymbolTable()
+	for idx, builtin := range object.Builtins {
+		symbolTable.DefineBuiltin(idx, builtin.Name)
+	}
 
 	for {
 		fmt.Fprint(out, PROMPT)

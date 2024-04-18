@@ -319,7 +319,6 @@ func applyFunction(fn object.Object, args []object.Object) object.Object {
 		return unwrapReturnValue(evaluated)
 
 	case *object.Builtin:
-		fmt.Println(args[0].Inspect())
 		if result := fn.Fn(args...); result != nil {
 			return result
 		}

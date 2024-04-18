@@ -20,7 +20,8 @@ const (
 	RETURN_VALUE_OBJ      = "RETURN_VALUE"
 	ERROR_OBJ             = "ERROR"
 	FUNCTION_OBJ          = "FUNCTION"
-	COMPILED_FUNCTION_OBJ = "COMPILED_FUNCTION_OBJ"
+	COMPILED_FUNCTION_OBJ = "COMPILED_FUNCTION"
+	CLOSURE_OBJ           = "CLOSURE"
 	BUILTIN_OBJ           = "BUILTIN"
 	ARRAY_OBJ             = "ARRAY"
 	HASH_OBJ              = "HASH"
@@ -137,13 +138,23 @@ type CompiledFunction struct {
 	NumParameters int
 }
 
-func (cf *CompiledFunction) Type() ObjectType { return COMPILED_FUNCTION_OBJ }
-func (cf *CompiledFunction) Inspect() string {
-	return fmt.Sprintf("compiled function [%p]", cf)
+func (c *CompiledFunction) Type() ObjectType { return COMPILED_FUNCTION_OBJ }
+func (c *CompiledFunction) Inspect() string {
+	return fmt.Sprintf("compiled function [%p]", c)
 }
 
 type Builtin struct {
 	Fn BuiltinFunction
+}
+
+type Closure struct {
+	Fn   *CompiledFunction
+	Free []Object // Semantically equivalent to Env field on regular function objects
+}
+
+func (c *Closure) Type() ObjectType { return CLOSURE_OBJ }
+func (c *Closure) Inspect() string {
+	return fmt.Sprintf("closure [%p]", c)
 }
 
 func (b *Builtin) Type() ObjectType { return BUILTIN_OBJ }

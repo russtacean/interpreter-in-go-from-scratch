@@ -39,6 +39,7 @@ const (
 	OpReturnValue
 	OpReturn // Function has no return value implicit or explicit
 	OpClosure
+	OpGetFree
 )
 
 type Definition struct {
@@ -75,6 +76,7 @@ var definitions = map[Opcode]*Definition{
 	OpReturnValue:   {"OpReturnValue", []int{}},
 	OpReturn:        {"OpReturn", []int{}},
 	OpClosure:       {"OpClosure", []int{2, 1}}, // {constantIndex, freeVariableCount}
+	OpGetFree:       {"OpGetFree", []int{1}},
 }
 
 func Lookup(op byte) (*Definition, error) {

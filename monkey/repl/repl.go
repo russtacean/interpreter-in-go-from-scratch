@@ -26,8 +26,7 @@ const MONKEY_FACE = `            __,__
            '-----'
 `
 
-func Start(in io.Reader, out io.Writer) {
-	useVM := true // TODO parameterize this via command line
+func Start(in io.Reader, out io.Writer, useVM bool) {
 	scanner := bufio.NewScanner(in)
 
 	// Tree walking interpreter

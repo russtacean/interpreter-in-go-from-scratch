@@ -67,11 +67,13 @@ func (compiler *Compiler) Compile(node ast.Node) error {
 		}
 
 	case *ast.LetStatement:
+		// Define before compiling node to allow for recursive functions
+		symbol := compiler.symbolTable.Define(node.Name.Value)
 		err := compiler.Compile(node.Value)
 		if err != nil {
 			return err
 		}
-		symbol := compiler.symbolTable.Define(node.Name.Value)
+
 		if symbol.Scope == GlobalScope {
 			compiler.emit(code.OpSetGlobal, symbol.Index)
 		} else {
@@ -272,6 +274,10 @@ func (compiler *Compiler) Compile(node ast.Node) error {
 	case *ast.FunctionLiteral:
 		compiler.enterScope()
 
+		if node.Name != "" {
+			compiler.symbolTable.DefineFunctionName(node.Name)
+		}
+
 		for _, param := range node.Parameters {
 			compiler.symbolTable.Define(param.Value)
 		}
@@ -443,5 +449,7 @@ func (compiler *Compiler) loadSymbol(s Symbol) {
 		compiler.emit(code.OpGetBuiltin, s.Index)
 	case FreeScope:
 		compiler.emit(code.OpGetFree, s.Index)
+	case FunctionScope:
+		compiler.emit(code.OpCurrentClosure)
 	}
 }

@@ -1,4 +1,5 @@
 # interpreter-in-go-from-scratch
+**Current status: complete**
 
 This is a repo I'm devoting to the code I write as I follow 2 books:
 - *Writing An Interpreter In Go* by Thorsten Ball: [link](https://interpreterbook.com/)

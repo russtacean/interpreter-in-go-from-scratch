@@ -26,7 +26,8 @@ var NULL = &object.Null{}
 
 func New(bytecode *compiler.Bytecode) *VM {
 	mainFn := &object.CompiledFunction{Instructions: bytecode.Instructions}
-	mainFrame := NewFrame(mainFn, 0)
+	mainClosure := &object.Closure{Fn: mainFn}
+	mainFrame := NewFrame(mainClosure, 0)
 
 	frames := make([]*Frame, MaxFrames)
 	frames[0] = mainFrame
@@ -244,6 +245,16 @@ func (vm *VM) Run() error {
 			vm.sp = frame.basePointer - 1
 
 			err := vm.push(NULL)
+			if err != nil {
+				return err
+			}
+
+		case code.OpClosure:
+			constIndex := code.ReadUint16(instructions[ip+1:])
+			_ = code.ReadUint8(instructions[ip+3:]) // TODO decode 2nd operand
+			vm.currentFrame().ip += 3
+
+			err := vm.pushClosure(int(constIndex))
 			if err != nil {
 				return err
 			}
@@ -491,8 +502,8 @@ func (vm *VM) executeCall(numArgs int) error {
 	fnIndex := vm.sp - 1 - numArgs
 	callee := vm.stack[fnIndex]
 	switch callee := callee.(type) {
-	case *object.CompiledFunction:
-		return vm.callFunction(callee, numArgs)
+	case *object.Closure:
+		return vm.callClosure(callee, numArgs)
 	case *object.Builtin:
 		return vm.callBuiltin(callee, numArgs)
 	default:
@@ -500,16 +511,28 @@ func (vm *VM) executeCall(numArgs int) error {
 	}
 }
 
-func (vm *VM) callFunction(fn *object.CompiledFunction, numArgs int) error {
-	if numArgs != fn.NumParameters {
-		return fmt.Errorf("wrong number of arguments: got=%d, expected=%d", numArgs, fn.NumParameters)
+func (vm *VM) callClosure(closure *object.Closure, numArgs int) error {
+	if numArgs != closure.Fn.NumParameters {
+		return fmt.Errorf("wrong number of arguments: got=%d, expected=%d", numArgs, closure.Fn.NumParameters)
 	}
 
-	frame := NewFrame(fn, vm.sp-numArgs) // Put basePointer at first arg on stack
+	frame := NewFrame(closure, vm.sp-numArgs) // Put basePointer at first arg on stack
 	vm.pushFrame(frame)
-	vm.sp = frame.basePointer + fn.NumLocals // Create hole in stack to store local vars
+	vm.sp = frame.basePointer + closure.Fn.NumLocals // Create hole in stack to store local vars
 
 	return nil
+}
+
+func (vm *VM) pushClosure(constIndex int) error {
+	constant := vm.constants[constIndex]
+	fn, ok := constant.(*object.CompiledFunction)
+	if !ok {
+		return fmt.Errorf("not a function %+v", constant)
+	}
+
+	closure := &object.Closure{Fn: fn}
+	return vm.push(closure)
+
 }
 
 func (vm *VM) callBuiltin(builtin *object.Builtin, numArgs int) error {

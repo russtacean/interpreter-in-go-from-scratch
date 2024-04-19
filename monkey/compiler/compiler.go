@@ -296,7 +296,8 @@ func (compiler *Compiler) Compile(node ast.Node) error {
 			NumParameters: len(node.Parameters),
 		}
 
-		compiler.emit(code.OpConstant, compiler.addConstant(compiledFn))
+		fnIndex := compiler.addConstant(compiledFn)
+		compiler.emit(code.OpClosure, fnIndex, 0)
 
 	case *ast.CallExpression:
 		err := compiler.Compile(node.Function)

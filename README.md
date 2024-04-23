@@ -43,7 +43,7 @@ This repo is structured with commits I made as I went through each of the books.
 ## Interpreter Book
 This books creates the base language syntax and a tree walking interpreter for it
 - Chapter 1: Creates a lexer to let us tokenize Monkey code
-- Chapter 2: Creates a parser to turn our tokenized code into an abstract syntax tree (AST)
+- Chapter 2: Implements a Pratt parser to turn our tokenized code into an abstract syntax tree (AST)
 - Chapter 3: Creates a tree-walking evaluator to let us evaluate our AST
 - Chapter 4: Adds strings, composite data types (array and hashmap), and built-in functions (e.g. `len()`)
 

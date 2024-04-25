@@ -389,7 +389,7 @@ func (compiler *Compiler) removeLastPop() {
 
 func (compiler *Compiler) replaceInstruction(pos int, newInstruction []byte) {
 	instructions := compiler.currentInstructions()
-	for i := 0; i < len(newInstruction); i++ {
+	for i := range len(newInstruction) {
 		instructions[pos+i] = newInstruction[i]
 	}
 }

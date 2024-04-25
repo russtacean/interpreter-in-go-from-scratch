@@ -548,7 +548,7 @@ func (vm *VM) pushClosure(constIndex int, numFree int) error {
 
 	// Order is important here, same order variables are referenced in the closure body
 	free := make([]object.Object, numFree)
-	for i := 0; i < numFree; i++ {
+	for i := range numFree {
 		free[i] = vm.stack[vm.sp-numFree+i]
 	}
 	vm.sp = vm.sp - numFree

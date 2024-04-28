@@ -9,7 +9,7 @@ This is a repo I'm devoting to the code I write as I follow 2 books:
 These books walk you through how to create an interpreter for a language created for the books called Monkey. Here is some example Monkey code:
 ```
 let x = 5;
-let y = 6
+let y = 6;
 let z = x + y
 
 let array = [1, 2, 3];
